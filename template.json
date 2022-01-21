@@ -89,19 +89,19 @@
         "rootPath": {
             "type": "string",
             "metadata": {
-                "description": "Root filesystem path to install to on VM"
+                "description": "Root filesystem path to install on VM"
             }
         },
         "appUser": {
             "type": "string",
             "metadata": {
-                "description": "SQL DB username for application"
+                "description": "SQL database username for application"
             }
         },
         "appPassword": {
             "type": "securestring",
             "metadata": {
-                "description": "SQL DB password for application"
+                "description": "SQL database password for application"
             }
         },
         "loginMYGServer": {
@@ -237,6 +237,58 @@
             }
         },
         {
+            "name": "[parameters('sqlServerName')]",
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2021-02-01-preview",
+            "location": "[parameters('location')]",
+            "tags": {
+                "displayName": "[parameters('sqlServerName')]"
+            },
+            "properties": {
+                "administratorLogin": "[parameters('sqlAdminUsername')]",
+                "administratorLoginPassword": "[parameters('sqlAdminPassword')]"
+            },
+            "resources": [
+                //uncomment block below to disallow all Azure Services to talk to this Azure SQL Server
+                {
+                    "type": "firewallRules",
+                    "apiVersion": "2021-02-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                    ],
+                    "location": "[parameters('location')]",
+                    "name": "AllowAllWindowsAzureIps",
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    }
+                },
+                {
+                    "name": "[concat(parameters('sqlServerName'),'/',parameters('sqlDatabaseName'))]",
+                    "type": "Microsoft.Sql/servers/databases",
+                    "apiVersion": "2021-02-01-preview",
+                    "location": "[parameters('location')]",
+                    "tags": {
+                        "displayName": "[parameters('sqlDatabaseName')]"
+                    },
+                    "sku": {
+                        //"name": "S1",
+                        //"tier": "Standard"
+                        "name": "[parameters('sqlDatabaseComputeSize')]",
+                        "tier": "[parameters('sqlDatabaseServiceTier')]"                        
+
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"                        
+                    ],
+                    "properties": {
+                        "collation": "SQL_Latin1_General_CP1_CI_AS"
+                    }
+                    
+                }
+            ]
+        },
+        {
             "name": "[parameters('vmName')]",
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2021-03-01",
@@ -264,7 +316,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[concat('windowsVM1OSDisk','_',parameters('vmName'))]",
+                        "name": "[concat('windowsVM1-OSDisk','_',parameters('vmName'))]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -319,59 +371,7 @@
                     }
                 }
             ]
-        },
-        {
-            "name": "[parameters('sqlServerName')]",
-            "type": "Microsoft.Sql/servers",
-            "apiVersion": "2021-02-01-preview",
-            "location": "[parameters('location')]",
-            "tags": {
-                "displayName": "[parameters('sqlServerName')]"
-            },
-            "properties": {
-                "administratorLogin": "[parameters('sqlAdminUsername')]",
-                "administratorLoginPassword": "[parameters('sqlAdminPassword')]"
-            },
-            "resources": [
-                //uncomment block below to disallow all Azure Services to talk to this Azure SQL Server
-                {
-                    "type": "firewallRules",
-                    "apiVersion": "2021-02-01-preview",
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
-                    ],
-                    "location": "[parameters('location')]",
-                    "name": "AllowAllWindowsAzureIps",
-                    "properties": {
-                        "startIpAddress": "0.0.0.0",
-                        "endIpAddress": "0.0.0.0"
-                    }
-                },
-                {
-                    "name": "[concat(parameters('sqlServerName'),'/',parameters('sqlDatabaseName'))]",
-                    "type": "Microsoft.Sql/servers/databases",
-                    "apiVersion": "2021-02-01-preview",
-                    "location": "[parameters('location')]",
-                    "tags": {
-                        "displayName": "[parameters('sqlDatabaseName')]"
-                    },
-                    "sku": {
-                        //"name": "S1",
-                        //"tier": "Standard"
-                        "name": "[parameters('sqlDatabaseComputeSize')]",
-                        "tier": "[parameters('sqlDatabaseServiceTier')]"                        
-
-                    },
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"                        
-                    ],
-                    "properties": {
-                        "collation": "SQL_Latin1_General_CP1_CI_AS"
-                    }
-                    
-                }
-            ]
-        }
+        }		
     ],
     "outputs": {}
 }
