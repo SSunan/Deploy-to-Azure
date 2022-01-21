@@ -17,11 +17,12 @@ $sqlServerName = $sqlServerName + ".database.windows.net" #adding DNS suffix to 
 
 New-Item -Path "$rootPath" -ItemType "directory" -Force
 Set-Location $rootPath
+$LogFile = "LOGS_DeployToAzure.log"
 
 function WriteLog
 {
     Param ([string]$LogString)
-    $LogFile = "$rootPath\LOGS_DeployToAzure.log"
+    #$LogFile = "LOGS_DeployToAzure.log"
     $DateTime = "[{0:MM/dd/yyyy} {0:HH:mm:ss}]" -f (Get-Date)
     $LogMessage = "$Datetime $LogString"
     Add-content $LogFile -value $LogMessage
@@ -52,44 +53,37 @@ Install-Module -Name SqlServer -Repository PSGallery -Force -Verbose -AllowClobb
 Install-Module Az.Accounts -MinimumVersion 2.2.0 -Repository PSGallery -Force -Verbose -AllowClobber #needed for MSI login
 
 WriteLog "Trying to connect to SQL Server: $sqlServerName"
-Wait-Event -Timeout 120
+#Wait-Event -Timeout 120
+Wait-Event -Timeout 30
 
 $createlogin = "CREATE LOGIN [$appUser] WITH PASSWORD=N'$appPassword'"
 $createappuser = "CREATE USER [$appUser] FOR LOGIN [$appUser] WITH DEFAULT_SCHEMA=[dbo]; ALTER ROLE [db_datareader] ADD MEMBER [$appUser]; ALTER ROLE [db_datawriter] ADD MEMBER [$appUser];"
 $excutescript = "$rootPath\SQLServer\geotabadapterdb-DatabaseCreationScript.sql"
-$sqllogfile = "sql001.log"
+#$sqllogfile = "sql001.log"
 
+WriteLog "CREATE LOGIN [$appUser]."
 Invoke-Sqlcmd -ServerInstance $sqlServerName `
             -Database 'master' `
             -Username $sqlUserName `
             -Password $sqlPassword `
             -Query $createlogin `
-            -Verbose *>> $sqllogfile
+            -Verbose *>> $LogFile
 
-WriteLog "CREATE LOGIN [$appUser]. See sql001.log for any error to create LOGIN."
-
+WriteLog "CREATE USER [$appUser]."	
 Invoke-Sqlcmd -ServerInstance $sqlServerName `
             -Database $sqlDatabaseName `
             -Username $sqlUserName `
             -Password $sqlPassword `
             -Query $createappuser `
-            -Verbose *>> $sqllogfile
-
-WriteLog "CREATE USER [$appUser]. See sql001.log for any error to create USER."			
-
+            -Verbose *>> $LogFile
+		
+WriteLog "Execute the script file $excutescript."
 Invoke-Sqlcmd -ServerInstance $sqlServerName `
             -Database $sqlDatabaseName `
             -Username $sqlUserName `
             -Password $sqlPassword `
             -InputFile $excutescript `
-			-Verbose *>> $sqllogfile		
-            #-Verbose *>> $sqllogfile `
-			#-IncludeSqlUserErrors
-			#-OutputSqlErrors $true
-            #-IncludeSqlUserErrors | Out-File -FilePath "MySqlCmd.log"
-
-WriteLog "Excuted the SQL Server database creation scripts."
-WriteLog "Run the script file $excutescript. See sql001.log for any error to run the creation scripts."
+            -Verbose *>> $LogFile
 
 $appSettingsFile = "$rootPath\MyGeotabAPIAdapter_SCD_win-x64\appsettings.json"
 $pattern = '//"Database'
@@ -131,8 +125,9 @@ Add-Content $PSFileName '$task = New-ScheduledTask -Action $action -Description 
 Add-Content $PSFileName 'Register-ScheduledTask "Load_MyGeotabAPIAdapter" -InputObject $task'
 Add-Content $PSFileName 'Start-ScheduledTask -TaskName "Load_MyGeotabAPIAdapter"'
 
-WriteLog "Created a ps file $PSFileName for a Windows Scheduled Task in the server $env:computername."
-#wait 120-300 seconds (2-5 minutes) for SQL database being ready
-Wait-Event -Timeout 60
+WriteLog "Created file $PSFileName for Windows Scheduled Task in the server $env:computername."
+#wait 60-300 seconds (1-5 minutes) for SQL database being ready
+#Wait-Event -Timeout 60
+Wait-Event -Timeout 30
 Powershell.exe ".\$PSFileName"
-WriteLog "A Windows Scheduled Task named Load_MyGeotabAPIAdapter is successfully created in the server $env:computername."
+WriteLog "Created Windows Scheduled Task named Load_MyGeotabAPIAdapter successfully in the server $env:computername."
