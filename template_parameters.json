@@ -33,7 +33,7 @@
             "value": "<sql server admin password>"	//i.e. 
         },
         "sqlDatabaseName": {
-            "value": "<sql database name>"	//i.e. dbAdapter-01
+            "value": "<sql database name>"	//i.e. geotabadapterdb - match the Adapter document
         },
         "sqlDatabaseServiceTier": { //There are three SQL Database editions: Basic, Standard and Premium
             "value": "Standard"
