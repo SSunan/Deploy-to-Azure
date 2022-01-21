@@ -117,7 +117,6 @@ Add-Content $PSFileName -Value $AdapterLocation -NoNewline
 Add-Content $PSFileName '"'
 Add-Content $PSFileName '$DateTime_TS = (Get-Date).AddMinutes(1)'
 Add-Content $PSFileName '$action = New-ScheduledTaskAction -Execute "C:\Windows\System32\cmd.exe" -Argument "/c MyGeotabAPIAdapter.exe" -WorkingDirectory "$WorkingLocation\"'
-#Add-Content $PSFileName '$trigger = New-ScheduledTaskTrigger -Once -At "$DateTime_TS" -RandomDelay (New-TimeSpan -Minute 1)'
 Add-Content $PSFileName '$trigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay (New-TimeSpan -Minute 1)'
 Add-Content $PSFileName '$principal = New-ScheduledTaskPrincipal -UserID "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest'
 Add-Content $PSFileName '$settings = New-ScheduledTaskSettingsSet -RunOnlyIfNetworkAvailable -WakeToRun -ExecutionTimeLimit 0'
@@ -126,8 +125,6 @@ Add-Content $PSFileName 'Register-ScheduledTask "Load_MyGeotabAPIAdapter" -Input
 Add-Content $PSFileName 'Start-ScheduledTask -TaskName "Load_MyGeotabAPIAdapter"'
 
 WriteLog "Created file $PSFileName for Windows Scheduled Task in the server $env:computername."
-#wait 60-300 seconds (1-5 minutes) for SQL database being ready
-#Wait-Event -Timeout 60
 Wait-Event -Timeout 30
 Powershell.exe ".\$PSFileName"
 WriteLog "Created Windows Scheduled Task named Load_MyGeotabAPIAdapter successfully in the server $env:computername."
