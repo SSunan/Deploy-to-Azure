@@ -10,7 +10,7 @@ param (
     $loginMYGDatabase,
     $loginMYGUser,
     $loginMYGPassword,
-	$versionOfAdapter
+    $versionOfAdapter
     )																						
 
 $sqlServerName = $sqlServerName + ".database.windows.net" #adding DNS suffix to Azure SQL Server name
