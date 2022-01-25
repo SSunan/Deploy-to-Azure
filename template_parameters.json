@@ -67,7 +67,7 @@
         },
         "versionOfAdapter": {
             "value": "v1.5.0.0" //i.e. latest version of the Adapter on Github
-            #"value": "v1.4.0.9"
+            //"value": "v1.4.0.9"
         }                    
     }
 }
